@@ -711,7 +711,14 @@ jobs:
               FIXED=true
             fi
 
-            # Fix 11: Hapus overrides yang bermasalah
+            # Fix 11: url_launcher
+            if grep -q "url_launcher" "$PUB_LOG" && grep -q "requires SDK version" "$PUB_LOG"; then
+              echo "Fix: Menurunkan url_launcher ke 6.1.14"
+              sed -i -E "s/url_launcher:[[:space:]]*['\"]?[^'\"]+['\"]?/url_launcher: ^6.1.14/g" pubspec.yaml || true
+              FIXED=true
+            fi
+
+            # Fix 12: Hapus overrides yang bermasalah
             if grep -q "overrides" "$PUB_LOG"; then
               echo "Fix: Menangani dependency overrides"
               sed -i '/^dependency_overrides:/,/^[^ ]/d' pubspec.yaml || true
