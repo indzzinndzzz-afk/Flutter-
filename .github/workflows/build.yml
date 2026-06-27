@@ -822,7 +822,7 @@ jobs:
             # Fix get / getx
             if grep -q " get " "$PUB_LOG" && grep -q "requires SDK version" "$PUB_LOG"; then
               echo "Fix: Menurunkan get"
-              sed -i -E 's/^([[:space:]]*)get:[[:space:]]*[^[:space:]]*/get: ^4.6.6/' pubspec.yaml || true
+              sed -i -E 's/^([[:space:]]*)get:[[:space:]]*[^[:space:]]*/get: ^4.6.6/' pubspec.yaml || true
               FIXED=true
             fi
 
