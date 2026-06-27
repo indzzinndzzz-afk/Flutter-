@@ -686,15 +686,32 @@ jobs:
               sed -i '/android {/a\\    compileOptions {\n        sourceCompatibility JavaVersion.VERSION_17\n        targetCompatibility JavaVersion.VERSION_17\n    }\n\n    kotlinOptions {\n        jvmTarget = "17"\n    }' android/app/build.gradle
             fi
 
-            # Add signing config if missing
-            if ! grep -q "signingConfigs" android/app/build.gradle; then
-              echo "✓ Adding signingConfigs"
+            # Add signing config if missing (cek spesifik signingConfigs.release, bukan cuma keyword signingConfigs)
+            if ! grep -qP 'signingConfigs\s*\{' android/app/build.gradle; then
+              echo "✓ Adding signingConfigs (release)"
               sed -i '/android {/a\\    signingConfigs {\n        release {\n            storeFile file("../../release.keystore")\n            storePassword "password"\n            keyAlias "release"\n            keyPassword "password"\n        }\n    }' android/app/build.gradle
+            elif ! grep -qP '^\s*release\s*\{' android/app/build.gradle; then
+              echo "✓ signingConfigs ada tapi tidak ada blok 'release', menambahkan..."
+              sed -i '/signingConfigs\s*{/a\\        release {\n            storeFile file("../../release.keystore")\n            storePassword "password"\n            keyAlias "release"\n            keyPassword "password"\n        }' android/app/build.gradle
+            else
+              echo "✓ signingConfigs.release sudah ada, tidak diubah"
             fi
 
-            # Ensure buildTypes use signing config
-            if grep -q "buildTypes" android/app/build.gradle && ! grep -q "signingConfig signingConfigs.release" android/app/build.gradle; then
-              sed -i '/release {/a\\            signingConfig signingConfigs.release' android/app/build.gradle
+            # Ensure buildTypes release menggunakan signingConfigs.release (hanya jika belum dirujuk sama sekali)
+            if grep -q "buildTypes" android/app/build.gradle && ! grep -q "signingConfig signingConfigs" android/app/build.gradle; then
+              echo "✓ Menambahkan signingConfig ke buildTypes.release"
+              awk '
+                /buildTypes[[:space:]]*\{/ { in_buildtypes=1 }
+                in_buildtypes && /release[[:space:]]*\{/ && !done {
+                  print
+                  print "            signingConfig signingConfigs.release"
+                  done=1
+                  next
+                }
+                { print }
+              ' android/app/build.gradle > android/app/build.gradle.tmp && mv android/app/build.gradle.tmp android/app/build.gradle
+            else
+              echo "ℹ️ buildTypes sudah merujuk signingConfig, tidak diubah (mencegah duplikasi)"
             fi
           fi
 
