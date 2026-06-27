@@ -638,12 +638,11 @@ jobs:
 
             echo "=== Auto-fixing pubspec.yaml ==="
 
-            # Fix 1: SDK constraint terlalu tinggi (menangani ^3.x.x dan >=3.x.x)
+            # Fix 1: SDK constraint terlalu tinggi - hanya replace dart sdk constraint, bukan "sdk: flutter"
             if grep -q "requires SDK version" "$PUB_LOG" || grep -q "requires Dart SDK version" "$PUB_LOG"; then
               echo "Fix: Menurunkan SDK constraint"
-              # Ganti SELURUH baris sdk: ... (apapun isinya) jadi constraint yang aman.
-              # Pakai match baris penuh supaya ga ninggalin sisa teks lama (yang sebelumnya bikin pubspec.yaml korup).
-              sed -i -E "s/^([[:space:]]*sdk:).*/\1 \">=3.0.0 <4.0.0\"/" pubspec.yaml || true
+              # Hanya match baris sdk: yang berisi versi (>=x.x.x atau ^x.x.x), bukan "sdk: flutter"
+              sed -i -E "s/^([[:space:]]*sdk:[[:space:]]*)(\'|\")(>=|\^)[^\'\"]+(\'|\")/\1\'>=3.0.0 <4.0.0\'/" pubspec.yaml || true
               FIXED=true
             fi
 
