@@ -701,7 +701,32 @@ jobs:
           # ====== FIX 4: gradle-wrapper.properties ======
           if [ -f "android/gradle/wrapper/gradle-wrapper.properties" ]; then
             echo "✓ Fixing gradle-wrapper.properties..."
-            sed -i 's|distributionUrl=.*|distributionUrl=https\\://services.gradle.org/distributions/gradle-8.9-all.zip|' android/gradle/wrapper/gradle-wrapper.properties
+
+            # Deteksi versi AGP yang dideklarasikan project (modern atau legacy settings.gradle)
+            AGP_VERSION=""
+            if [ -f "android/settings.gradle" ]; then
+              AGP_VERSION=$(grep -oP '"com\.android\.application"\s+version\s+"\K[0-9]+\.[0-9]+\.[0-9]+' android/settings.gradle || true)
+            fi
+            if [ -z "$AGP_VERSION" ] && [ -f "android/build.gradle" ]; then
+              AGP_VERSION=$(grep -oP "com\.android\.tools\.build:gradle:\K[0-9]+\.[0-9]+\.[0-9]+" android/build.gradle || true)
+            fi
+
+            AGP_MAJOR_MINOR=$(echo "$AGP_VERSION" | grep -oE '^[0-9]+\.[0-9]+' || true)
+            echo "Detected AGP version: ${AGP_VERSION:-none} (major.minor: ${AGP_MAJOR_MINOR:-none})"
+
+            # Mapping AGP -> minimum Gradle yang dibutuhkan
+            case "$AGP_MAJOR_MINOR" in
+              "8.9"|"8.10"|"8.11") GRADLE_VERSION="8.11.1" ;;
+              "8.7"|"8.8")          GRADLE_VERSION="8.9" ;;
+              "8.5"|"8.6")          GRADLE_VERSION="8.7" ;;
+              "8.3"|"8.4")          GRADLE_VERSION="8.4" ;;
+              "8.0"|"8.1"|"8.2")    GRADLE_VERSION="8.0" ;;
+              "7."*)                GRADLE_VERSION="7.5" ;;
+              *)                    GRADLE_VERSION="8.11.1" ;;  # default aman untuk AGP modern/unknown
+            esac
+
+            echo "✓ Menggunakan Gradle $GRADLE_VERSION (cocok untuk AGP ${AGP_VERSION:-default})"
+            sed -i "s|distributionUrl=.*|distributionUrl=https\\\\://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-all.zip|" android/gradle/wrapper/gradle-wrapper.properties
           fi
 
           echo "=== Gradle fix completed ==="
