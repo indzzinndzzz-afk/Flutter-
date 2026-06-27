@@ -23,6 +23,11 @@ jobs:
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v4
+        with:
+          accept-android-sdk-licenses: true
+
+      - name: Accept Android SDK licenses (force)
+        run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
       - name: Install dependencies (ImageMagick, jq, unzip, curl)
         run: sudo apt-get update && sudo apt-get install -y imagemagick jq unzip curl
@@ -587,7 +592,7 @@ jobs:
             cp android/settings.gradle android/settings.gradle.bak
 
             # Get Flutter version
-            FLUTTER_VER=$(flutter --version | head -n1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -n1 || echo "0.0.0")
+            FLUTTER_VER=$(flutter --version 2>/dev/null | head -n1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -n1 || echo "3.24.0")
             FLUTTER_MINOR=$(echo "$FLUTTER_VER" | cut -d. -f2)
 
             # Check if using modern gradle format
@@ -595,7 +600,7 @@ jobs:
               echo "✓ Detected modern settings.gradle with flutter-plugin-loader"
 
               # Jika Flutter < 3.16, konversi ke legacy format
-              if [ "$FLUTTER_MINOR" -lt 16 ]; then
+              if [ -n "$FLUTTER_MINOR" ] && [ "$FLUTTER_MINOR" -lt 16 ] 2>/dev/null; then
                 echo "⚠️ Flutter $FLUTTER_VER < 3.16, converting to legacy settings.gradle..."
                 cat > android/settings.gradle << 'EOF'
           include ':app'
@@ -618,7 +623,7 @@ jobs:
               echo "✓ Using legacy settings.gradle"
 
               # Jika Flutter >= 3.16, upgrade ke modern format
-              if [ "$FLUTTER_MINOR" -ge 16 ]; then
+              if [ -n "$FLUTTER_MINOR" ] && [ "$FLUTTER_MINOR" -ge 16 ] 2>/dev/null; then
                 echo "⚠️ Flutter $FLUTTER_VER >= 3.16, upgrading to modern settings.gradle..."
                 cat > android/settings.gradle << 'EOF'
           pluginManagement {
@@ -677,7 +682,7 @@ jobs:
             # Add kotlinOptions if missing
             if ! grep -q "kotlinOptions" android/app/build.gradle; then
               echo "✓ Adding kotlinOptions"
-              sed -i '/android {/a\\    compileOptions {\n        sourceCompatibility JavaVersion.VERSION_1_8\n        targetCompatibility JavaVersion.VERSION_1_8\n    }\n\n    kotlinOptions {\n        jvmTarget = "1.8"\n    }' android/app/build.gradle
+              sed -i '/android {/a\\    compileOptions {\n        sourceCompatibility JavaVersion.VERSION_17\n        targetCompatibility JavaVersion.VERSION_17\n    }\n\n    kotlinOptions {\n        jvmTarget = "17"\n    }' android/app/build.gradle
             fi
 
             # Add signing config if missing
