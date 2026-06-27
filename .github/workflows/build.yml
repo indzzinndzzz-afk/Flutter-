@@ -649,78 +649,78 @@ jobs:
             # Fix 2: webview_flutter too high
             if grep -q "webview_flutter" "$PUB_LOG" && grep -q "requires SDK version" "$PUB_LOG"; then
               echo "Fix: Menurunkan webview_flutter ke 4.13.0"
-              sed -i -E "s/webview_flutter:[[:space:]]*['\"]?[^'\"]+['\"]?/webview_flutter: ^4.13.0/g" pubspec.yaml || true
+              sed -i -E 's/webview_flutter:[[:space:]]*[^[:space:]]*/webview_flutter: ^4.13.0/' pubspec.yaml || true
               FIXED=true
             fi
 
             # Fix 3: geolocator compatibility
             if grep -q "geolocator" "$PUB_LOG" && (grep -q "toARGB32" "$PUB_LOG" || grep -q "geolocator_android" "$PUB_LOG"); then
               echo "Fix: Menurunkan geolocator ke 13.0.4"
-              sed -i -E "s/geolocator:[[:space:]]*['\"]?[^'\"]+['\"]?/geolocator: ^13.0.4/g" pubspec.yaml || true
+              sed -i -E 's/geolocator:[[:space:]]*[^[:space:]]*/geolocator: ^13.0.4/' pubspec.yaml || true
               FIXED=true
             fi
 
             # Fix 4: google_maps_flutter
             if grep -q "google_maps_flutter" "$PUB_LOG" && grep -q "requires SDK version" "$PUB_LOG"; then
               echo "Fix: Menurunkan google_maps_flutter"
-              sed -i -E "s/google_maps_flutter:[[:space:]]*['\"]?[^'\"]+['\"]?/google_maps_flutter: ^2.9.0/g" pubspec.yaml || true
+              sed -i -E 's/google_maps_flutter:[[:space:]]*[^[:space:]]*/google_maps_flutter: ^2.9.0/' pubspec.yaml || true
               FIXED=true
             fi
 
             # Fix 5: permission_handler
             if grep -q "permission_handler" "$PUB_LOG" && grep -q "requires SDK version" "$PUB_LOG"; then
               echo "Fix: Menurunkan permission_handler"
-              sed -i -E "s/permission_handler:[[:space:]]*['\"]?[^'\"]+['\"]?/permission_handler: ^11.3.1/g" pubspec.yaml || true
+              sed -i -E 's/permission_handler:[[:space:]]*[^[:space:]]*/permission_handler: ^11.3.1/' pubspec.yaml || true
               FIXED=true
             fi
 
             # Fix 6: firebase_core
             if grep -q "firebase_core" "$PUB_LOG" && grep -q "requires SDK version" "$PUB_LOG"; then
               echo "Fix: Menurunkan firebase_core"
-              sed -i -E "s/firebase_core:[[:space:]]*['\"]?[^'\"]+['\"]?/firebase_core: ^2.32.0/g" pubspec.yaml || true
-              sed -i -E "s/(firebase_[a-z_]+):[[:space:]]*['\"]?[^'\"]+['\"]?/\1: ^2.32.0/g" pubspec.yaml || true
+              sed -i -E 's/firebase_core:[[:space:]]*[^[:space:]]*/firebase_core: ^2.32.0/' pubspec.yaml || true
+              sed -i -E 's/(firebase_[a-z_]+):[[:space:]]*[^[:space:]]*/\1: ^2.32.0/' pubspec.yaml || true
               FIXED=true
             fi
 
             # Fix 7: file_picker
             if grep -q "file_picker" "$PUB_LOG" && grep -q "requires SDK version" "$PUB_LOG"; then
               echo "Fix: Menurunkan file_picker"
-              sed -i -E "s/file_picker:[[:space:]]*['\"]?[^'\"]+['\"]?/file_picker: ^6.2.1/g" pubspec.yaml || true
+              sed -i -E 's/file_picker:[[:space:]]*[^[:space:]]*/file_picker: ^6.2.1/' pubspec.yaml || true
               FIXED=true
             fi
 
             # Fix 8: image_picker
             if grep -q "image_picker" "$PUB_LOG" && grep -q "requires SDK version" "$PUB_LOG"; then
               echo "Fix: Menurunkan image_picker"
-              sed -i -E "s/image_picker:[[:space:]]*['\"]?[^'\"]+['\"]?/image_picker: ^1.1.2/g" pubspec.yaml || true
+              sed -i -E 's/image_picker:[[:space:]]*[^[:space:]]*/image_picker: ^1.1.2/' pubspec.yaml || true
               FIXED=true
             fi
 
             # Fix 9: flutter_local_notifications
             if grep -q "flutter_local_notifications" "$PUB_LOG" && grep -q "requires SDK version" "$PUB_LOG"; then
               echo "Fix: Menurunkan flutter_local_notifications"
-              sed -i -E "s/flutter_local_notifications:[[:space:]]*['\"]?[^'\"]+['\"]?/flutter_local_notifications: ^17.2.4/g" pubspec.yaml || true
+              sed -i -E 's/flutter_local_notifications:[[:space:]]*[^[:space:]]*/flutter_local_notifications: ^17.2.4/' pubspec.yaml || true
               FIXED=true
             fi
 
             # Fix 10: workmanager
             if grep -q "workmanager" "$PUB_LOG" && grep -q "requires SDK version" "$PUB_LOG"; then
               echo "Fix: Menurunkan workmanager"
-              sed -i -E "s/workmanager:[[:space:]]*['\"]?[^'\"]+['\"]?/workmanager: ^0.5.2/g" pubspec.yaml || true
+              sed -i -E 's/workmanager:[[:space:]]*[^[:space:]]*/workmanager: ^0.5.2/' pubspec.yaml || true
               FIXED=true
             fi
 
             # Fix 11: url_launcher
             if grep -q "url_launcher" "$PUB_LOG" && grep -q "requires SDK version" "$PUB_LOG"; then
               echo "Fix: Menurunkan url_launcher ke 6.1.14"
-              sed -i -E "s/url_launcher:[[:space:]]*['\"]?[^'\"]+['\"]?/url_launcher: ^6.1.14/g" pubspec.yaml || true
+              sed -i -E 's/url_launcher:[[:space:]]*[^[:space:]]*/url_launcher: ^6.1.14/' pubspec.yaml || true
               FIXED=true
             fi
 
             # Fix 12: google_fonts
             if grep -q "google_fonts" "$PUB_LOG" && grep -q "requires Flutter SDK version" "$PUB_LOG"; then
               echo "Fix: Menurunkan google_fonts ke 5.1.0"
-              sed -i -E "s/google_fonts:[[:space:]]*['"]?[^'"]+['"]?/google_fonts: ^5.1.0/g" pubspec.yaml || true
+              sed -i -E 's/google_fonts:[[:space:]]*[^[:space:]]*/google_fonts: ^5.1.0/' pubspec.yaml || true
               FIXED=true
             fi
 
