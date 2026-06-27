@@ -521,7 +521,7 @@ jobs:
           echo "Detected SDK constraint: $SDK_LINE"
 
           # Default untuk kompatibilitas luas
-          FLUTTER_VERSION="3.24.0"
+          FLUTTER_VERSION="3.24.0"  # default
 
           # Function untuk extract major.minor dari SDK constraint
           get_dart_version() {
@@ -549,7 +549,7 @@ jobs:
               "3.3"*)  FLUTTER_VERSION="3.19.0" ;;
               "3.2"*)  FLUTTER_VERSION="3.16.0" ;;
               "3.1"*)  FLUTTER_VERSION="3.16.0" ;;  # FIX: Minimal 3.16.0 untuk kompatibilitas
-              "3.0"*)  FLUTTER_VERSION="3.10.0" ;;
+              "3.0"*)  FLUTTER_VERSION="3.22.0" ;;
               *)       FLUTTER_VERSION="3.24.0" ;;
             esac
           fi
@@ -791,12 +791,114 @@ jobs:
               FIXED=true
             fi
 
+            # Fix audioplayers
+            if grep -q "audioplayers" "$PUB_LOG" && grep -q "requires SDK version" "$PUB_LOG"; then
+              echo "Fix: Menurunkan audioplayers ke 5.2.1"
+              sed -i -E 's/audioplayers:[[:space:]]*[^[:space:]]*/audioplayers: ^5.2.1/' pubspec.yaml || true
+              FIXED=true
+            fi
+
+            # Fix shared_preferences
+            if grep -q "shared_preferences" "$PUB_LOG" && grep -q "requires SDK version" "$PUB_LOG"; then
+              echo "Fix: Menurunkan shared_preferences"
+              sed -i -E 's/shared_preferences:[[:space:]]*[^[:space:]]*/shared_preferences: ^2.2.2/' pubspec.yaml || true
+              FIXED=true
+            fi
+
+            # Fix flutter_local_notifications
+            if grep -q "flutter_local_notifications" "$PUB_LOG" && grep -q "requires SDK version" "$PUB_LOG"; then
+              echo "Fix: Menurunkan flutter_local_notifications"
+              sed -i -E 's/flutter_local_notifications:[[:space:]]*[^[:space:]]*/flutter_local_notifications: ^16.3.3/' pubspec.yaml || true
+              FIXED=true
+            fi
+
+            # Fix dio
+            if grep -q "dio" "$PUB_LOG" && grep -q "requires SDK version" "$PUB_LOG"; then
+              echo "Fix: Menurunkan dio"
+              sed -i -E 's/dio:[[:space:]]*[^[:space:]]*/dio: ^5.4.3/' pubspec.yaml || true
+              FIXED=true
+            fi
+
+            # Fix get / getx
+            if grep -q " get " "$PUB_LOG" && grep -q "requires SDK version" "$PUB_LOG"; then
+              echo "Fix: Menurunkan get"
+              sed -i -E 's/^([[:space:]]*)get:[[:space:]]*[^[:space:]]*/get: ^4.6.6/' pubspec.yaml || true
+              FIXED=true
+            fi
+
+            # Generic fallback: kalau masih conflict setelah fix specific, naikkan flutter version
+            if grep -q "requires Flutter SDK version" "$PUB_LOG" || grep -q "requires Dart SDK version" "$PUB_LOG"; then
+              echo "Fix: Force upgrade Flutter version ke 3.24.0"
+              echo "FLUTTER_VERSION=3.24.0" >> $GITHUB_ENV || true
+              FIXED=true
+            fi
+
             if [ "$FIXED" = true ]; then
               echo "✅ Pubspec telah di-fix"
               rm -f pubspec.lock
             else
               echo "ℹ️ Tidak ada perbaikan yang diperlukan"
             fi
+          }
+
+          # Function to regenerate android folder if unsupported gradle project
+          fix_unsupported_gradle() {
+            echo "🔧 Detected unsupported Gradle project, regenerating android folder..."
+            
+            # Backup existing android folder
+            mv android android_backup 2>/dev/null || true
+
+            # Create flutter project template to get clean android folder
+            cd ..
+            flutter create --org com.buildbot --project-name flutter_tmp _tmp_flutter_template 2>/dev/null || true
+            
+            if [ -d "_tmp_flutter_template/android" ]; then
+              cp -R _tmp_flutter_template/android flutter-project/android
+              echo "✅ Android folder regenerated from template"
+              
+              # Restore app-specific files from backup
+              if [ -d "flutter-project/android_backup/app/src/main" ]; then
+                # Keep user's AndroidManifest if exists
+                if [ -f "flutter-project/android_backup/app/src/main/AndroidManifest.xml" ]; then
+                  cp flutter-project/android_backup/app/src/main/AndroidManifest.xml flutter-project/android/app/src/main/AndroidManifest.xml 2>/dev/null || true
+                  echo "✅ AndroidManifest.xml restored"
+                fi
+                # Keep user's kotlin/java source
+                if [ -d "flutter-project/android_backup/app/src/main/kotlin" ]; then
+                  cp -R flutter-project/android_backup/app/src/main/kotlin flutter-project/android/app/src/main/ 2>/dev/null || true
+                fi
+                if [ -d "flutter-project/android_backup/app/src/main/java" ]; then
+                  cp -R flutter-project/android_backup/app/src/main/java flutter-project/android/app/src/main/ 2>/dev/null || true
+                fi
+                # Keep res folder
+                if [ -d "flutter-project/android_backup/app/src/main/res" ]; then
+                  cp -R flutter-project/android_backup/app/src/main/res flutter-project/android/app/src/main/ 2>/dev/null || true
+                fi
+              fi
+              
+              # Get original applicationId if exists
+              ORIG_APP_ID=""
+              if [ -f "flutter-project/android_backup/app/build.gradle" ]; then
+                ORIG_APP_ID=$(grep -oP '(?<=applicationId ")[^"]+' flutter-project/android_backup/app/build.gradle | head -n1 || true)
+              fi
+              if [ -z "$ORIG_APP_ID" ] && [ -f "flutter-project/android_backup/app/build.gradle" ]; then
+                ORIG_APP_ID=$(grep -oP "(?<=applicationId ')[^']+" flutter-project/android_backup/app/build.gradle | head -n1 || true)
+              fi
+              
+              if [ -n "$ORIG_APP_ID" ]; then
+                sed -i "s/com\.example\.flutter_tmp/$ORIG_APP_ID/g" flutter-project/android/app/build.gradle 2>/dev/null || true
+                sed -i "s/com\.example\.flutter_tmp/$ORIG_APP_ID/g" flutter-project/android/app/src/main/AndroidManifest.xml 2>/dev/null || true
+                echo "✅ applicationId restored: $ORIG_APP_ID"
+              fi
+              
+              rm -rf _tmp_flutter_template
+            else
+              echo "⚠️ Template generation failed, restoring backup"
+              mv flutter-project/android_backup flutter-project/android 2>/dev/null || true
+            fi
+            
+            cd flutter-project
+            rm -rf android_backup 2>/dev/null || true
           }
 
           # Main build loop with retries
@@ -810,22 +912,34 @@ jobs:
 
               # Try build
               if [ "$BUILD_MODE" = "release" ]; then
-                if flutter build apk --release; then
+                BUILD_LOG="../build_attempt_${RETRY_COUNT}.log"
+                if flutter build apk --release 2>&1 | tee "$BUILD_LOG"; then
                   SUCCESS=true
                   echo "✅ Build successful!"
                   break
                 else
                   echo "❌ Build failed, attempting to fix..."
+                  cat "$BUILD_LOG" >> "$PUB_LOG" || true
+                  # Deteksi unsupported Gradle project
+                  if grep -q "unsupported Gradle project" "$BUILD_LOG"; then
+                    fix_unsupported_gradle
+                  fi
                   auto_fix_pubspec
                   rm -rf build .dart_tool
                 fi
               else
-                if flutter build apk --debug; then
+                BUILD_LOG="../build_attempt_${RETRY_COUNT}.log"
+                if flutter build apk --debug 2>&1 | tee "$BUILD_LOG"; then
                   SUCCESS=true
                   echo "✅ Build successful!"
                   break
                 else
                   echo "❌ Build failed, attempting to fix..."
+                  cat "$BUILD_LOG" >> "$PUB_LOG" || true
+                  # Deteksi unsupported Gradle project
+                  if grep -q "unsupported Gradle project" "$BUILD_LOG"; then
+                    fix_unsupported_gradle
+                  fi
                   auto_fix_pubspec
                   rm -rf build .dart_tool
                 fi
